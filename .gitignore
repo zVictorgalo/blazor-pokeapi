@@ -1,0 +1,21 @@
+## Visual Studio / .NET
+.vs/
+.vscode/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.cache
+*.log
+*.nupkg
+*.snupkg
+packages/
+artifacts/
+ publish/
+.DS_Store
+Thumbs.db

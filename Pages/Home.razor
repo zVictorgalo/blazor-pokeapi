@@ -1,0 +1,101 @@
+@page "/"
+@inject PokemonService PokemonService
+
+<PageTitle>Buscar Pokémon</PageTitle>
+<section class="intro">
+    <p class="eyebrow">POKÉDEX • BLAZOR WEBASSEMBLY</p>
+    <h1>Buscar Pokémon</h1>
+    <p>Digite o nome de um Pokémon para consultar seus dados.</p>
+</section>
+<section class="panel">
+    <form @onsubmit="BuscarAsync" @onsubmit:preventDefault>
+        <label for="nome">Nome do Pokémon</label>
+        <div class="search">
+            <input id="nome" @bind="nome" @bind:event="oninput"
+                   placeholder="Ex.: ditto, pikachu ou charizard" disabled="@carregando" />
+            <button type="submit" disabled="@carregando">
+                @(carregando ? "Buscando..." : "Buscar Pokémon")
+            </button>
+        </div>
+    </form>
+    @if (carregando)
+    {
+        <p role="status">Consultando a PokéAPI...</p>
+    }
+    @if (!string.IsNullOrEmpty(erro))
+    {
+        <p class="error" role="alert">@erro</p>
+    }
+</section>
+@if (pokemon is not null)
+{
+    <section class="panel result" aria-label="Detalhes do Pokémon">
+        <div class="artwork">
+            @if (!string.IsNullOrWhiteSpace(pokemon.Imagem) && !imagemFalhou)
+            {
+                <img src="@pokemon.Imagem" alt="Imagem oficial de @pokemon.Name"
+                     @onerror="() => imagemFalhou = true" />
+            }
+            else
+            {
+                <p>Imagem oficial indisponível.</p>
+            }
+        </div>
+        <div>
+            <h2>Detalhes do Pokémon</h2>
+            <dl>
+                <dt>ID</dt><dd>@pokemon.Id</dd>
+                <dt>Nome</dt><dd class="name">@pokemon.Name</dd>
+                <dt>Altura</dt><dd>@pokemon.AlturaMetros.ToString("0.##", cultura) m</dd>
+                <dt>Peso</dt><dd>@pokemon.PesoQuilos.ToString("0.##", cultura) kg</dd>
+            </dl>
+        </div>
+    </section>
+}
+
+@code {
+    private string nome = string.Empty;
+    private string? erro;
+    private Pokemon? pokemon;
+    private bool carregando;
+    private bool imagemFalhou;
+    private readonly CultureInfo cultura = CultureInfo.GetCultureInfo("pt-BR");
+
+    private async Task BuscarAsync()
+    {
+        if (carregando) return;
+        erro = null;
+        pokemon = null;
+        imagemFalhou = false;
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            erro = "Digite o nome de um Pokémon.";
+            return;
+        }
+        carregando = true;
+        try
+        {
+            pokemon = await PokemonService.BuscarAsync(nome);
+            if (pokemon is null)
+            {
+                erro = "Pokémon não encontrado. Confira o nome e tente novamente.";
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            erro = "A consulta demorou demais. Tente novamente.";
+        }
+        catch (HttpRequestException)
+        {
+            erro = "Não foi possível acessar a PokéAPI. Verifique sua conexão e tente novamente.";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            erro = "A API retornou dados inválidos. Tente novamente mais tarde.";
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+}
